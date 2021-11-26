@@ -1,0 +1,524 @@
+# Apps project
+
+# With this project we would are planning to analyze all of the free apps in the Google store and Apple store to select the apps that are more likely to attract more users.
+
+# In[1]:
+
+
+#Opening the information from the files#
+from csv import reader
+
+#Google play dataset#
+opened_file = open('googleplaystore')
+read_file = reader(opened_file)
+android = list(read_file)
+android_header = android[0]
+android = android[1:]
+
+
+#Apple Store dataset#
+opened_file = open('AppleStore.csv')
+read_file = reader(opened_file)
+ios = list(read_file)
+ios_header = ios[0]
+ios = ios[1:]
+
+
+# In[2]:
+
+
+#Exploring information in the dataset#
+#Android apps#
+def explore_data(dataset, start, end, rows_and_columns=False):
+    dataset_slice = dataset[start:end]    
+    for row in dataset_slice:
+        print(row)
+        print('\n') # adds a new (empty) line after each row
+
+    if rows_and_columns:
+        print('Number of rows:', len(dataset))
+        print('Number of columns:', len(dataset[0]))            
+              
+print(android_header)
+print('\n')
+print(explore_data(android,0,3,True))
+print(type(explore_data(android,0,3,True)))
+
+
+# In[3]:
+
+
+#iOs apps#
+print(ios_header)
+print('\n')
+explore_data(ios, 0, 3, True)
+print(type(explore_data(ios, 0, 3, True)))
+
+
+# In[4]:
+
+
+#cheking if there is a dataset with extra or less columns in both apps#
+for row in android:
+    if len(row) != len(android_header):
+        print('Android')
+        print('row:',android.index(row))
+        print('len:',len(row))
+        print('\n')
+        
+for row in ios:
+    if len(row) > len(ios_header):
+        print('ios')
+        print('row:',ios.index(row))
+        print('len:',len(row))
+        print('\n')
+
+
+# In[5]:
+
+
+
+#veryfing if row number 10472 is indeed incorrect for the Android data set#
+print(android[10472])  # incorrect row
+print('\n')
+print(android_header)  # header
+print('\n')
+print(android[0])      # correct row
+
+
+# In[6]:
+
+
+#Deleting the incorrect row#
+print('data set size before deleting row:',len(android))
+del android[10472]  
+print('data set size after deleting row:',len(android))
+
+
+# If we explore the Google Play data set long enough, we'll find that some apps have more than one entry. For instance, the application Instagram has four entries:
+
+# In[7]:
+
+
+#If we explore the data set long enough, we'll find that
+#some apps have more than one entry. For instance, 
+#the application Instagram in the Google Play data has four entries'
+
+for app in android:
+    name = app[0]
+    if name == 'Instagram':
+        print(app)
+
+
+# In[8]:
+
+
+#Finding duplicates in both datasets
+#Android#
+duplicate_apps_android = []
+unique_apps_android = []
+
+for app in android:
+    app_name = app[0]
+    if app_name in unique_apps_android:
+        duplicate_apps_android.append(app_name)
+    else:
+        unique_apps_android.append(app_name)
+    
+print('Number of duplicate apps in Google Play dataset:', len(duplicate_apps_android))
+print('\n')
+print('Examples of duplicate apps in Google Play dataset::', duplicate_apps_android[:15])
+print('\n')
+
+#iOs#
+duplicate_apps_ios = []
+unique_apps_ios = []
+
+for app in ios:
+    if app[1] in unique_apps_ios:
+        duplicate_apps_ios.append(app[1])
+    else:
+        unique_apps_ios.append(app[1])
+    
+print('Number of duplicate apps in Apple Store dataset:', len(duplicate_apps_ios))
+print('\n')
+print('Examples of duplicate apps in Apple Store dataset:', duplicate_apps_ios[:15])
+print('\n')
+
+
+# In[9]:
+
+
+#We will remove all duplicated entries considering the higher number of 
+#reviews since this must be the most recent data.
+
+
+# In[10]:
+
+
+#creating a dictionary with only unique apps and their
+#maximun reviews values for Android Play Store
+
+reviews_max_android = {}
+
+for app in android:
+    app_name = app[0]
+    n_reviews = float(app[3])
+
+    if app_name in reviews_max_android and reviews_max_android[app_name] < n_reviews:
+        reviews_max_android[app_name] = n_reviews
+
+    elif app_name not in reviews_max_android:
+        reviews_max_android[app_name] = n_reviews
+
+
+
+# In[11]:
+
+
+#cheking if our new dictionary is correct#
+
+print('expected value',len(android)-len(duplicate_apps_android))
+print('actual value', len(reviews_max_android))
+
+
+# In[12]:
+
+
+#Deleting duplicated items by creating a new data set with only unique values
+
+android_clean = []
+already_added = []
+
+for app in android:
+    name = app[0]
+    n_reviews = float(app[3])
+    
+    if (reviews_max_android[name] == n_reviews) and (name not in already_added):
+        android_clean.append(app)
+        already_added.append(name)     
+
+
+# In[13]:
+
+
+#Let's explore the new data set:
+
+explore_data(android_clean, 0, 3, True)
+
+
+# In[14]:
+
+
+#If data is exlpored it will be found that the names of some of the apps 
+#suggest they are not directed toward an English-speaking audience. i.e:
+
+print(ios[813][1])
+print(ios[6731][1])
+
+print(android_clean[4412][0])
+print(android_clean[7940][0])
+
+
+# In[15]:
+
+
+#With the following function we can detect if there is a character in the
+#string that doesn't belong to the set of common English characters
+
+def is_english(string):
+    
+    for character in string:
+        if ord(character) > 127:
+            return False
+    
+    return True
+
+print(is_english('Instagram'))
+print(is_english('爱奇艺PPS -《欢乐颂2》电视剧热播'))
+print(is_english('Docs To Go™ Free Office Suite'))
+print(is_english('Instachat 😜'))
+
+print(ord('™'))
+print(ord('😜'))
+
+
+# In[16]:
+
+
+#Changing the code so it will return a false value if the character fall 
+#outside the ASCII range (0-127)
+def is_english(string):
+    non_ascii = 0
+    
+    for character in string:
+        if ord(character) > 127:
+            non_ascii += 1
+    
+    if non_ascii > 3:
+        return False
+    else:
+        return True
+
+print(is_english('Docs To Go™ Free Office Suite'))
+print(is_english('Instachat 😜'))
+print(is_english('爱奇艺PPS -《欢乐颂2》电视剧热播'))
+
+
+# In[17]:
+
+
+#Using previous function to filter out non-English apps from both datasets
+
+android_english = []
+ios_english = []
+
+for app in android_clean:
+    name = app[0]
+    if is_english(name):
+        android_english.append(app)
+        
+for app in ios:
+    name = app[1]
+    if is_english(name):
+        ios_english.append(app)
+
+#checking some data from the new dataset        
+explore_data(android_english, 0, 3, True)
+print('\n')
+explore_data(ios_english, 0, 3, True)
+
+
+# In[18]:
+
+
+#Isolating free apps#
+
+android_final = []
+ios_final = []
+
+for app in android_english:
+    price = app[7]
+    if price == '0':
+        android_final.append(app)
+        
+for app in ios_english:
+    price = app[4]
+    if price == '0.0':
+        ios_final.append(app)
+        
+print(len(android_final))
+print(len(ios_final))
+
+
+# The end goal of this project is to add the app on both the App Store and Google Play so it is needed to find app profiles that are successful on both
+# markets. For instance, a profile that might work well for both markets might be a productivity app that makes use of gamification.
+# 
+# Let's begin the analysis by getting a sense of the most common genres for each market. For this, we'll build a frequency table for the prime_genre column of the App Store data set, and the Genres and Category columns of the Google Play data set.
+# 
+
+# In[19]:
+
+
+#creating the freq_table function
+
+def freq_table(dataset, index):
+    table = {}
+    total = 0
+    
+    for row in dataset:
+        total += 1
+        value = row[index]
+        if value in table:
+            table[value] += 1
+        else:
+            table[value] = 1
+    
+    table_percentages = {}
+    for key in table:
+        percentage = (table[key] / total) * 100
+        table_percentages[key] = percentage 
+    
+    return table_percentages
+
+#Creating function to display the generated freq_table as tupple and sorted
+#by the selected column in ascending order.
+
+def display_table(dataset, index):
+    table = freq_table(dataset, index)
+    table_display = []
+    for key in table:
+        key_val_as_tuple = (table[key], key)
+        table_display.append(key_val_as_tuple)
+        
+    table_sorted = sorted(table_display, reverse = True)
+    for entry in table_sorted:
+        print(entry[1], ':', entry[0])
+
+
+# In[20]:
+
+
+#Checking the generated tables for both Apps regarding their nature  
+display_table(android_final,1) # using "Category colum"
+print('\n')
+display_table(ios_final,-5) # using "prime_genre column"
+
+
+# For the Apples store We can see that among the free English apps, more than a half (58.16%) are games. Entertainment apps are close to 8%, followed by photo and video apps, which are close to 5%. Only 3.66% of the apps are designed for education, followed by social networking apps which amount for 3.29% of the apps in our data set.
+# 
+# The landscape seems significantly different on Google Play: there are not that many apps designed for fun, and it seems that a good number of apps are designed for practical purposes (family, tools, business, lifestyle, productivity, etc.). However, if we investigate this further, we can see that the family category (which accounts for almost 19% of the apps) means mostly games for kids.
+# 
+# 
+
+# In[21]:
+
+
+#Trying to find out which genres are most popular based on their ratings
+
+#ios apps
+print("Rankings of apps by rating: Apple store")
+print('\n')
+genres_ios = freq_table(ios_final, -5)
+
+for genre in genres_ios:
+    total = 0
+    len_genre = 0
+    for app in ios_final:
+        genre_app = app[-5]
+        if genre_app == genre:            
+            n_ratings = float(app[5])
+            total += n_ratings
+            len_genre += 1
+    avg_n_ratings = total / len_genre
+    print(genre, ':',avg_n_ratings)
+
+print('\n')
+    
+#android apps
+print("Rankings of apps by rating. Google Play store")
+print('\n')
+
+genres_android = freq_table(android_final, -4)
+for genre in genres_android:
+    total = 0
+    len_genre = 0
+    for app in android_final:
+        genre_app = app[-4]
+        if genre_app == genre:            
+            n_ratings = float(app[2])
+            total += n_ratings
+            len_genre += 1
+    avg_n_ratings = total / len_genre
+    print(genre, ':', avg_n_ratings)
+
+
+# For the ios Apps, Navigation, social networking or music apps might seem more popular than they really are. The average number of ratings seem to be skewed by very few apps which have hundreds of thousands of user ratings like Google Maps,Facebook, Skype, Pandora, Spotify, and Shazam.
+# 
+# In the other hand, the android apps have missing information in the rating
+# column so gettings results from this columnd would be innacurate. So we will use the same analysis using the installs columns instead.
+
+# In[24]:
+
+
+display_table(android_final, 5)
+
+
+# In[25]:
+
+
+categories_android = freq_table(android_final, 1)
+
+for category in categories_android:
+    total = 0
+    len_category = 0
+    for app in android_final:
+        category_app = app[1]
+        if category_app == category:            
+            n_installs = app[5]
+            n_installs = n_installs.replace(',', '')
+            n_installs = n_installs.replace('+', '')
+            total += float(n_installs)
+            len_category += 1
+    avg_n_installs = total / len_category
+    print(category, ':', avg_n_installs)
+
+
+# On average, communication apps have the most installs: 38,456,119. This number is heavily skewed up by a few apps that have over one billion installs (WhatsApp, Facebook Messenger, Skype, Google Chrome, Gmail, and Hangouts), and a few others with over 100 and 500 million installs:
+
+# In[27]:
+
+
+for app in android_final:
+    if app[1] == 'COMMUNICATION' and (app[5] == '1,000,000,000+'
+                                      or app[5] == '500,000,000+'
+                                      or app[5] == '100,000,000+'):
+        print(app[0], ':', app[5])
+
+
+# 
+# If we removed all the communication apps that have over 100 million installs, the average would be reduced roughly ten times:
+
+# In[29]:
+
+
+under_100_m = []
+
+for app in android_final:
+    n_installs = app[5]
+    n_installs = n_installs.replace(',', '')
+    n_installs = n_installs.replace('+', '')
+    if (app[1] == 'COMMUNICATION') and (float(n_installs) < 100000000):
+        under_100_m.append(float(n_installs))
+        
+sum(under_100_m) / len(under_100_m)
+
+
+# We see the same pattern for the video players category, which is the runner-up with 24,727,872 installs. The market is dominated by apps like Youtube, Google Play Movies & TV, or MX Player. The pattern is repeated for social apps (where we have giants like Facebook, Instagram, Google+, etc.), photography apps (Google Photos and other popular photo editors), or productivity apps (Microsoft Word, Dropbox, Google Calendar, Evernote, etc.).
+# 
+# Again, the main concern is that these app genres might seem more popular than they really are. Moreover, these niches seem to be dominated by a few giants who are hard to compete against.
+# 
+# The game genre seems pretty popular, but previously we found out this part of the market seems a bit saturated, so we'd like to come up with a different app recommendation if possible.
+# 
+# The books and reference genre looks fairly popular as well, with an average number of installs of 8,767,811. It's interesting to explore this in more depth, since we found this genre has some potential to work well on the App Store, and our aim is to recommend an app genre that shows potential for being profitable on both the App Store and Google Play. Let's take a look at some of the apps from this genre and their number of installs:
+
+# In[30]:
+
+
+for app in android_final:
+    if app[1] == 'BOOKS_AND_REFERENCE':
+        print(app[0], ':', app[5])
+
+
+# The book and reference genre includes a variety of apps: software for processing and reading ebooks, various collections of libraries, dictionaries, tutorials on programming or languages, etc. It seems there's still a small number of extremely popular apps that skew the average:
+
+# In[31]:
+
+
+for app in android_final:
+    if app[1] == 'BOOKS_AND_REFERENCE' and (app[5] == '1,000,000,000+'
+                                            or app[5] == '500,000,000+'
+                                            or app[5] == '100,000,000+'):
+        print(app[0], ':', app[5])
+
+
+# However, it looks like there are only a few very popular apps, so this market still shows potential. Let's try to get some app ideas based on the kind of apps that are somewhere in the middle in terms of popularity (between 1,000,000 and 100,000,000 downloads):
+
+# In[ ]:
+
+
+for app in android_final:
+    if app[1] == 'BOOKS_AND_REFERENCE' and (app[5] == '1,000,000+'
+                                            or app[5] == '5,000,000+'
+                                            or app[5] == '10,000,000+'
+                                            or app[5] == '50,000,000+'):
+        print(app[0], ':', app[5])
+
+
+# This niche seems to be dominated by software for processing and reading ebooks, as well as various collections of libraries and dictionaries, so it's probably not a good idea to build similar apps since there'll be some significant competition.
+# 
+# We also notice there are quite a few apps built around the book Quran, which suggests that building an app around a popular book can be profitable. It seems that taking a popular book (perhaps a more recent book) and turning it into an app could be profitable for both the Google Play and the App Store markets.
+# 
+# However, it looks like the market is already full of libraries, so we need to add some special features besides the raw version of the book. This might include daily quotes from the book, an audio version of the book, quizzes on the book, a forum where people can discuss the book, etc.
+
+# We concluded that taking a popular book (perhaps a more recent book) and turning it into an app could be profitable for both the Google Play and the App Store markets. The markets are already full of libraries, so we need to add some special features besides the raw version of the book. This might include daily quotes from the book, an audio version of the book, quizzes on the book, a forum where people can discuss the book, etc.
